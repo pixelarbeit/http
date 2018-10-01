@@ -16,7 +16,7 @@ class JsonClient
 
 
 
-    public function __contruct()
+    public function __construct()
     {
 
     }
@@ -31,47 +31,30 @@ class JsonClient
      */
     public function request($method, $url, $data = '', $headers = [])
     {
-        $ch = curl_init();
-        $data = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $this->addJsonHeaders($headers, $data);
-        $this->setOptions($ch, $method, $url, $data, $headers);
+        $request = new Request();
+        
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE);
 
-        $response = curl_exec($ch);
+        $request->setMethod($method);
+        $request->setHeaders($headers);        
+        $request->setData($json);
+        $request->setUrl($url);
 
-        if (curl_errno($ch)) {
-            throw new ConnectionException(curl_error($ch), curl_errno($ch));
-        }
+        $request->addHeader('Content-Type: application/json; charset=utf-8');
+        $request->addHeader('Content-Length: ' . strlen($json));
 
-        list($header, $body) = explode("\r\n\r\n", $response, 2);
-        $json = json_decode($body);
+        $response = $request->execute();
 
+        $json = json_decode($response->data());
+        
         if ($json === null) {
             var_dump($response);
             throw new InvalidResponseException("No valid JSON", 1);
         }
 
-        $headers = [];
-        $header = explode("\n", $header);
-        for ($i = 1; $i < count($header); $i++) {
-            list($key, $item) = explode(': ', $header[$i]);
-            $headers[$key] = $item;
-        }
+        $response->setData($json);
 
-        if ($this->debug == true) {
-            echo '<pre>';
-            echo "<strong>SENT HEADERS:</strong><br>";
-            print(curl_getinfo($ch)['request_header']) . '<br>';
-
-            echo "<strong>SENT PAYLOAD:</strong><br>";
-            print($data) . '<br><br>';
-
-            echo "<strong>RESPONSE:</strong><br>";
-            print($response) . '<br><br>';
-            echo '</pre>';
-        }
-
-
-        return [$headers, $json];
+        return $response;
     }
 
 
@@ -103,34 +86,7 @@ class JsonClient
     }
 
 
-
-    private function addJsonHeaders(&$headers, $json)
-    {
-        $headers[] = 'Content-Type: application/json; charset=utf-8';
-        $headers[] = 'Content-Length: ' . strlen($json);
-    }
-
-
-
-    private function setOptions(&$ch, $method, $url, $data, $headers)
-    {
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLINFO_HEADER_OUT , $this->debug);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-
-        curl_setopt($ch, CURLOPT_HEADER, 1);
-
-        curl_setopt($ch, CURLOPT_VERBOSE, true);
-    }
-
-
-
+    
     public function initBulkRequest()
     {
         $this->bulkHandler = curl_multi_init();
