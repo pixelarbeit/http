@@ -1,0 +1,23 @@
+{
+    "name": "pixelarbeit/http",
+    "type": "library",
+    "description": "HTTP JSON Client",
+    "keywords": ["http", "json"],
+    "homepage": "https://github.com/pixelarbeit/http",
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Dennis Koch",
+            "email": "info@pixelarbeit.de",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Pixelarbeit\\Http\\": "src"
+        }
+    }
+}
